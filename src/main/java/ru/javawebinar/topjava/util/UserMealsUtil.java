@@ -10,12 +10,15 @@ import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * GKislin
  * 31.05.2015.
  */
 public class UserMealsUtil {
+    static String s;
     public static void main(String[] args) {
         List<UserMeal> mealList = Arrays.asList(
                 new UserMeal(LocalDateTime.of(2015, Month.MAY, 30, 14, 0), "Завтрак", 500),
@@ -28,10 +31,11 @@ public class UserMealsUtil {
         System.out.println(getFilteredWithExceeded(mealList, LocalTime.of(7, 0), LocalTime.of(12, 0), 2000));
 //        .toLocalDate();
 //        .toLocalTime();
+
     }
 
 
-    public static List<UserMealWithExceed> getFilteredWithExceeded(List<UserMeal> mealList, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
+    public static List<UserMealWithExceed> getFilteredWithExceeded1(List<UserMeal> mealList, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
         // TODO return filtered list with correctly exceeded field
         List<UserMealWithExceed> listOfTheTime = new ArrayList<>();
         for (UserMeal um : mealList) {
@@ -48,5 +52,22 @@ public class UserMealsUtil {
             }
         }
         return listOfTheTime;
+    }
+    public static List<UserMealWithExceed> getFilteredWithExceeded(List<UserMeal> mealList, LocalTime startTime, LocalTime endTime, int caloriesPerDay) {
+        // TODO return filtered list with correctly exceeded field
+
+        List<UserMealWithExceed> listOfTheTime = new ArrayList<>();
+        Map<LocalDate, Integer> listOfTheDay =  mealList
+                .stream()
+                .collect(Collectors.groupingBy(um -> um.getDateTime().toLocalDate(),
+                Collectors.summingInt(UserMeal::getCalories)));
+
+        mealList.stream()
+                .filter(t -> TimeUtil.isBetween(t.getDateTime().toLocalTime(),startTime,endTime))
+                .forEach(i -> listOfTheTime
+                        .add( new UserMealWithExceed(i.getDateTime(),i.getDescription() // adding new user to resulting list
+                                ,i.getCalories(),listOfTheDay.get(i.getDateTime().toLocalDate()) > caloriesPerDay)));
+
+        return  listOfTheTime;
     }
 }
